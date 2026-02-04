@@ -84,19 +84,52 @@ curl -X POST https://web-production-19f04.up.railway.app/request \
 
 ### 场景3: Agent使用付费层 (演示自主支付决策)
 
+#### 方式A: Mock测试 (快速验证概念)
+
 ```bash
-# Agent评估需求，选择premium tier，提供支付证明
+# Mock测试: 使用"0xPAID"开头的hash模拟支付
 curl -X POST https://web-production-19f04.up.railway.app/request-premium \
   -H "Content-Type: application/json" \
   -d '{
     "agent_name": "PremiumAgent_'$(date +%s)'",
     "wallet_address": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
     "payment_tx": "0xPAID_test_'$(date +%s)'",
-    "reason": "High-frequency testing for production CI/CD"
+    "reason": "Mock testing premium tier"
   }'
 ```
 
-**Mock测试说明**: 使用以"0xPAID"开头的任何hash模拟有效支付
+#### 方式B: 真实自主支付 (生产环境)
+
+**Agents具备Web3能力时的完全自动化流程**:
+
+```python
+# Agent完全自主操作，无需人工
+from web3 import Web3
+from eth_account import Account
+
+# 1. Agent自主签名并发送支付
+w3 = Web3(Web3.HTTPProvider('https://sepolia.infura.io'))
+account = Account.from_key(agent_private_key)
+tx = {
+    'to': '0x2f134373561052bCD4ED8cba44AB66637b7bee0B',
+    'value': w3.to_wei(0.001, 'ether'),
+    'gas': 21000,
+    'gasPrice': w3.eth.gas_price,
+    'nonce': w3.eth.get_transaction_count(account.address)
+}
+signed_tx = account.sign_transaction(tx)
+payment_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction).hex()
+
+# 2. Agent自主请求服务
+import requests
+requests.post('/request-premium', json={
+    'agent_name': 'AutoAgent',
+    'wallet_address': account.address,
+    'payment_tx': payment_hash  # 自动获得的真实tx hash
+})
+```
+
+**关键点**: Agent有private key → 完全自主支付 → 零人工介入
 
 **Expected结果**:
 ```json
@@ -231,12 +264,30 @@ echo "=== 测试完成！==="
 
 ## 💡 为什么这是真正的Agentic Commerce
 
-1. **Agents做经济决策**: 不是人类选择tier，是agent基于算法自主选择
-2. **Agents验证支付**: 系统自动验证交易，无人工介入
-3. **Agents优化成本**: 自动计算break-even，选择最优方案
-4. **Agents 24/7运行**: 不受人类时间限制
+### 完全自主的工作流程
 
-**这不是"为agents设计的人类服务"，而是"agents自主运行的经济系统"**
+1. **Agents做经济决策**: Agent基于算法自主选择tier (不是人类猜测)
+2. **Agents自主支付**: Agent用web3自主签名并发送ETH (不需要人类点击钱包)
+3. **Agents验证支付**: 系统自动验证交易 (不需要人工审核)
+4. **Agents接收服务**: 自动发送USDC (不需要人工批准)
+5. **Agents 24/7运行**: 不受人类时间限制
+
+### 真实vs演示模式
+
+**Mock模式** (当前demo):
+- 使用"0xPAID"模拟支付
+- 目的: 快速验证概念
+- 适合: 评委快速测试
+
+**生产模式** (真实部署):
+- Agent有private key
+- Agent自主签名web3交易
+- Agent自主发送到network
+- 完全零人工介入
+
+**技术实现**: 见 `example_agent_web3.py` - 完整的自主支付演示代码
+
+**这不是"为agents设计的人类服务"，而是"agents完全自主运行的经济系统"**
 
 ---
 

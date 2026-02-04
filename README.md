@@ -12,8 +12,11 @@ Built for **#USDCHackathon** (Agentic Commerce track) | **[→ 30-Second Quick T
 
 **Want to test right now?** See **[QUICKSTART.md](QUICKSTART.md)** for 3 test scenarios (<30 seconds total)
 
+**Want to see FULL autonomy?** See **[example_agent_web3.py](example_agent_web3.py)** - Complete autonomous web3 payment demo
+
 Verify our core claims:
 - ✅ Agents make decisions 60-600x faster than humans
+- ✅ **Agents execute autonomous web3 payments** (zero human clicks)
 - ✅ Agents optimize costs autonomously
 - ✅ Agents operate 24/7 without human intervention
 
