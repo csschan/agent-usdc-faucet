@@ -12,7 +12,7 @@ import logging
 from datetime import datetime
 import os
 
-from blockchain import USDCFaucet
+from blockchain import MockUSDCFaucet
 from verifier import MoltbookVerifier
 from database import Database
 
@@ -27,10 +27,7 @@ CORS(app)  # Allow cross-origin requests from agents
 # Initialize components
 db = Database()
 verifier = MoltbookVerifier()
-faucet = USDCFaucet(
-    private_key=os.getenv('FAUCET_PRIVATE_KEY'),
-    rpc_url=os.getenv('SEPOLIA_RPC_URL', 'https://rpc.sepolia.org')
-)
+faucet = MockUSDCFaucet()  # Using mock mode for demo
 
 # Constants
 FAUCET_AMOUNT = 10  # 10 USDC per request
