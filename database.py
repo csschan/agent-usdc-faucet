@@ -39,6 +39,9 @@ class Database:
                 amount REAL NOT NULL,
                 tx_hash TEXT,
                 moltbook_proof TEXT,
+                tier TEXT DEFAULT 'free',
+                payment_tx TEXT,
+                payment_amount REAL,
                 timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
                 success BOOLEAN DEFAULT TRUE
             )
@@ -66,18 +69,21 @@ class Database:
         amount: float,
         tx_hash: str,
         moltbook_proof: str = "",
-        success: bool = True
+        success: bool = True,
+        tier: str = 'free',
+        payment_tx: str = None,
+        payment_amount: float = None
     ):
         """Record a faucet request"""
         cursor = self.conn.cursor()
         cursor.execute('''
             INSERT INTO requests
-            (agent_name, wallet_address, reason, amount, tx_hash, moltbook_proof, success)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        ''', (agent_name, wallet_address, reason, amount, tx_hash, moltbook_proof, success))
+            (agent_name, wallet_address, reason, amount, tx_hash, moltbook_proof, success, tier, payment_tx, payment_amount)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (agent_name, wallet_address, reason, amount, tx_hash, moltbook_proof, success, tier, payment_tx, payment_amount))
 
         self.conn.commit()
-        logger.info(f"Recorded request: {agent_name} -> {amount} USDC")
+        logger.info(f"Recorded request [{tier}]: {agent_name} -> {amount} USDC")
 
     def is_in_cooldown(self, agent_name: str, cooldown_hours: int) -> bool:
         """Check if agent is in cooldown period"""

@@ -1,6 +1,6 @@
 """
-Mock模式Flask服务器 - 用于测试，不需要真实RPC
-改进版：添加错误处理和日志
+Mock模式Flask服务器 - 混合定价模型
+展示Agentic Commerce能力：免费层 + 付费层
 """
 
 from flask import Flask, request, jsonify
@@ -17,6 +17,7 @@ try:
     from blockchain import MockUSDCFaucet
     from verifier import MockVerifier
     from database import Database
+    from payment_verifier import MockPaymentVerifier
     logger.info("✅ 成功导入所有模块")
 except Exception as e:
     logger.error(f"导入模块失败: {e}")
@@ -50,6 +51,12 @@ except Exception as e:
         def get_detailed_stats(self):
             return {**self.get_stats(), 'successful_requests': len(self.data), 'failed_requests': 0, 'unique_agents': len(self.data), 'use_cases': []}
 
+    class MockPaymentVerifier:
+        def verify_payment(self, tx_hash, expected_amount_eth=0.001):
+            if tx_hash.startswith('0x') and tx_hash[2:].upper().startswith('PAID'):
+                return {'verified': True, 'amount_eth': expected_amount_eth, 'from_address': '0x' + '1' * 40}
+            return {'verified': False, 'error': 'Mock payment not recognized'}
+
 app = Flask(__name__)
 CORS(app)
 
@@ -59,12 +66,17 @@ try:
     db.init_db()
     verifier = MockVerifier()
     faucet = MockUSDCFaucet()
+    payment_verifier = MockPaymentVerifier()
     logger.info("✅ 组件初始化成功")
 except Exception as e:
     logger.error(f"组件初始化失败: {e}")
 
-FAUCET_AMOUNT = 10
-COOLDOWN_HOURS = 24
+# 定价配置
+FREE_TIER_AMOUNT = 10  # USDC
+FREE_TIER_COOLDOWN = 24  # hours
+PREMIUM_TIER_AMOUNT = 100  # USDC
+PREMIUM_TIER_PRICE = 0.001  # ETH
+PAYMENT_ADDRESS = "0x2f134373561052bCD4ED8cba44AB66637b7bee0B"  # 收款地址
 
 @app.route('/')
 def index():
@@ -74,55 +86,113 @@ def index():
         <!DOCTYPE html>
         <html>
         <head>
-            <title>Agent USDC Faucet - Mock Mode</title>
+            <title>Agent USDC Faucet - Agentic Commerce Demo</title>
             <style>
                 body {{
                     font-family: monospace;
-                    max-width: 800px;
+                    max-width: 900px;
                     margin: 50px auto;
                     padding: 20px;
                     background: #0a0a0a;
                     color: #00ff00;
                 }}
                 h1 {{ color: #ffff00; }}
+                h2 {{ color: #00ff00; }}
                 .stat {{ margin: 10px 0; }}
+                .tier {{
+                    background: #1a1a1a;
+                    padding: 20px;
+                    margin: 20px 0;
+                    border-left: 4px solid;
+                }}
+                .tier-free {{ border-left-color: #00ff00; }}
+                .tier-premium {{ border-left-color: #ffaa00; }}
+                .tier-title {{ font-size: 18px; font-weight: bold; margin-bottom: 10px; }}
+                .tier-free .tier-title {{ color: #00ff00; }}
+                .tier-premium .tier-title {{ color: #ffaa00; }}
+                .tier-feature {{ margin: 8px 0; padding-left: 20px; }}
                 .code {{
                     background: #1a1a1a;
                     padding: 15px;
-                    border-left: 3px solid #00ff00;
+                    border-left: 3px solid #666;
                     overflow-x: auto;
-                    font-size: 12px;
+                    font-size: 11px;
+                    margin: 10px 0;
                 }}
+                .highlight {{ color: #ffff00; font-weight: bold; }}
+                .warning {{ color: #ff9900; }}
             </style>
         </head>
         <body>
-            <h1>🚰 Agent USDC Faucet (Mock Mode)</h1>
-            <p style="color: #ff9900;">⚠️ Test Mode - Returns mock transaction hashes</p>
+            <h1>🚰 Agent USDC Faucet</h1>
+            <p class="warning">⚠️ Mock Mode - Demonstrating Agentic Commerce</p>
 
-            <h2>📊 Stats</h2>
-            <div class="stat">Total Requests: <span style="color:#ffff00">{stats['total_requests']}</span></div>
-            <div class="stat">Total USDC: <span style="color:#ffff00">{stats['total_usdc']}</span></div>
-            <div class="stat">Success Rate: <span style="color:#ffff00">{stats['success_rate']}%</span></div>
+            <h2>📊 Current Stats</h2>
+            <div class="stat">Total Requests: <span class="highlight">{stats['total_requests']}</span></div>
+            <div class="stat">Total USDC Distributed: <span class="highlight">{stats['total_usdc']}</span></div>
+            <div class="stat">Success Rate: <span class="highlight">{stats['success_rate']}%</span></div>
 
-            <h2>🧪 Test API</h2>
-            <div class="code">
+            <h2>💰 Service Tiers</h2>
+
+            <div class="tier tier-free">
+                <div class="tier-title">🆓 Free Tier</div>
+                <div class="tier-feature">• Amount: <span class="highlight">10 USDC</span></div>
+                <div class="tier-feature">• Cooldown: <span class="highlight">24 hours</span></div>
+                <div class="tier-feature">• Cost: <span class="highlight">Free</span></div>
+                <div class="tier-feature">• Use case: Basic testing, casual development</div>
+                <div class="code">
 curl -X POST https://web-production-19f04.up.railway.app/request \\
   -H "Content-Type: application/json" \\
   -d '{{
-    "agent_name": "TestAgent",
+    "agent_name": "YourAgent",
     "wallet_address": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
     "reason": "Testing faucet"
   }}'
+                </div>
             </div>
 
-            <h2>🔗 Endpoints</h2>
+            <div class="tier tier-premium">
+                <div class="tier-title">⚡ Premium Tier</div>
+                <div class="tier-feature">• Amount: <span class="highlight">100 USDC</span> (10x more!)</div>
+                <div class="tier-feature">• Cooldown: <span class="highlight">None</span> (unlimited requests)</div>
+                <div class="tier-feature">• Cost: <span class="highlight">0.001 ETH</span> (~$2.50)</div>
+                <div class="tier-feature">• Use case: CI/CD, high-frequency testing, production agents</div>
+                <div class="tier-feature">• Payment: Send 0.001 ETH to <code style="color:#ffaa00">{PAYMENT_ADDRESS}</code></div>
+                <div class="code">
+# Step 1: Send payment (0.001 ETH to payment address)
+# Step 2: Request with payment proof
+curl -X POST https://web-production-19f04.up.railway.app/request-premium \\
+  -H "Content-Type: application/json" \\
+  -d '{{
+    "agent_name": "YourAgent",
+    "wallet_address": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
+    "payment_tx": "0xPAID...",
+    "reason": "High-frequency testing"
+  }}'
+
+# Mock testing: Use tx hash starting with "0xPAID" for demo
+                </div>
+            </div>
+
+            <h2>🤖 Why Agentic Commerce?</h2>
+            <p style="line-height: 1.6;">
+            This demonstrates <span class="highlight">agent economic decision-making</span>:<br>
+            • Agents can <strong>choose</strong> between free (limited) and paid (unlimited) tiers<br>
+            • Agents can <strong>verify payment</strong> autonomously<br>
+            • Agents can <strong>optimize costs</strong> based on their needs<br>
+            • Real-world use case: Production agents pay for premium service
+            </p>
+
+            <h2>🔗 API Endpoints</h2>
             <ul>
                 <li><a href="/health">/health</a> - Health check</li>
-                <li><a href="/stats">/stats</a> - Stats (JSON)</li>
+                <li><a href="/stats">/stats</a> - Detailed statistics (JSON)</li>
+                <li><strong>POST /request</strong> - Free tier (10 USDC, 24h cooldown)</li>
+                <li><strong>POST /request-premium</strong> - Premium tier (100 USDC, requires payment)</li>
             </ul>
 
             <p style="margin-top: 50px; color: #666;">
-                Built for <a href="https://moltbook.com/post/57a023bc-d6b5-423e-9959-32614a77450a" style="color:#00aaff">#USDCHackathon</a> by Galeon 🦞
+                Built for <a href="https://moltbook.com/post/57a023bc-d6b5-423e-9959-32614a77450a" style="color:#00aaff">#USDCHackathon</a> Agentic Commerce Track by Galeon 🦞
             </p>
         </body>
         </html>
@@ -147,44 +217,150 @@ def request_usdc():
             }), 400
 
         # 检查冷却
-        if db.is_in_cooldown(agent_name, COOLDOWN_HOURS):
+        if db.is_in_cooldown(agent_name, FREE_TIER_COOLDOWN):
             return jsonify({
                 'success': False,
-                'error': f'Cooldown active. Wait 24h between requests.'
+                'error': f'Free tier cooldown active. Wait 24h between requests or use /request-premium',
+                'hint': 'Premium tier: 100 USDC, no cooldown, costs 0.001 ETH'
             }), 429
 
         # 验证
         if not verifier.verify_agent(agent_name):
             return jsonify({'success': False, 'error': 'Verification failed'}), 403
 
-        # 发送USDC
-        tx_hash = faucet.send_usdc(wallet_address, FAUCET_AMOUNT)
+        # 发送USDC (免费层)
+        tx_hash = faucet.send_usdc(wallet_address, FREE_TIER_AMOUNT)
 
         # 记录
         db.record_request(
             agent_name=agent_name,
             wallet_address=wallet_address,
             reason=reason,
-            amount=FAUCET_AMOUNT,
+            amount=FREE_TIER_AMOUNT,
             tx_hash=tx_hash,
             moltbook_proof="",
-            success=True
+            success=True,
+            tier='free'
         )
 
-        logger.info(f"✅ Request from {agent_name}: {tx_hash}")
+        logger.info(f"✅ [FREE] Request from {agent_name}: {tx_hash}")
 
         return jsonify({
             'success': True,
-            'amount': f'{FAUCET_AMOUNT} USDC',
+            'tier': 'free',
+            'amount': f'{FREE_TIER_AMOUNT} USDC',
             'tx_hash': tx_hash,
             'explorer': f'https://sepolia.etherscan.io/tx/{tx_hash}',
-            'message': f'✅ Sent {FAUCET_AMOUNT} testnet USDC (Mock mode)',
-            'note': 'This is mock mode - no real blockchain transactions'
+            'message': f'✅ Sent {FREE_TIER_AMOUNT} testnet USDC (Free tier)',
+            'note': 'Mock mode - no real blockchain transactions',
+            'upgrade_hint': 'Need more? Use /request-premium for 100 USDC (costs 0.001 ETH)'
         }), 200
 
     except Exception as e:
         logger.error(f"Request error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/request-premium', methods=['POST'])
+def request_usdc_premium():
+    """Premium tier: Pay to get more USDC without cooldown"""
+    try:
+        data = request.get_json()
+
+        agent_name = data.get('agent_name')
+        wallet_address = data.get('wallet_address')
+        payment_tx = data.get('payment_tx')  # Payment transaction hash
+        reason = data.get('reason', 'No reason provided')
+
+        if not agent_name or not wallet_address or not payment_tx:
+            return jsonify({
+                'success': False,
+                'error': 'Missing required fields: agent_name, wallet_address, payment_tx',
+                'hint': 'Send 0.001 ETH to {} first, then provide the tx hash'.format(PAYMENT_ADDRESS)
+            }), 400
+
+        # 验证支付
+        payment_result = payment_verifier.verify_payment(payment_tx, PREMIUM_TIER_PRICE)
+
+        if not payment_result.get('verified'):
+            return jsonify({
+                'success': False,
+                'error': 'Payment verification failed',
+                'details': payment_result.get('error'),
+                'hint': 'For mock testing, use tx hash starting with "0xPAID"'
+            }), 402  # Payment Required
+
+        # 验证agent身份（可选，premium可以跳过）
+        # if not verifier.verify_agent(agent_name):
+        #     return jsonify({'success': False, 'error': 'Verification failed'}), 403
+
+        # 发送USDC (付费层 - 10倍金额)
+        tx_hash = faucet.send_usdc(wallet_address, PREMIUM_TIER_AMOUNT)
+
+        # 记录
+        db.record_request(
+            agent_name=agent_name,
+            wallet_address=wallet_address,
+            reason=reason,
+            amount=PREMIUM_TIER_AMOUNT,
+            tx_hash=tx_hash,
+            moltbook_proof="",
+            success=True,
+            tier='premium',
+            payment_tx=payment_tx,
+            payment_amount=payment_result.get('amount_eth', PREMIUM_TIER_PRICE)
+        )
+
+        logger.info(f"✅ [PREMIUM] Request from {agent_name}: {tx_hash} (paid {payment_result.get('amount_eth')} ETH)")
+
+        return jsonify({
+            'success': True,
+            'tier': 'premium',
+            'amount': f'{PREMIUM_TIER_AMOUNT} USDC',
+            'tx_hash': tx_hash,
+            'explorer': f'https://sepolia.etherscan.io/tx/{tx_hash}',
+            'message': f'✅ Sent {PREMIUM_TIER_AMOUNT} testnet USDC (Premium tier)',
+            'payment_verified': True,
+            'payment_amount': f'{payment_result.get("amount_eth", PREMIUM_TIER_PRICE)} ETH',
+            'note': 'Mock mode - no real blockchain transactions',
+            'benefits': 'No cooldown, 10x amount, priority processing'
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Premium request error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/pricing')
+def pricing():
+    """Return pricing information in JSON"""
+    try:
+        return jsonify({
+            'tiers': {
+                'free': {
+                    'amount_usdc': FREE_TIER_AMOUNT,
+                    'cooldown_hours': FREE_TIER_COOLDOWN,
+                    'cost_eth': 0,
+                    'endpoint': '/request'
+                },
+                'premium': {
+                    'amount_usdc': PREMIUM_TIER_AMOUNT,
+                    'cooldown_hours': 0,
+                    'cost_eth': PREMIUM_TIER_PRICE,
+                    'payment_address': PAYMENT_ADDRESS,
+                    'endpoint': '/request-premium'
+                }
+            },
+            'value_proposition': {
+                'premium_multiplier': f'{PREMIUM_TIER_AMOUNT / FREE_TIER_AMOUNT}x more USDC',
+                'cost_per_usdc': f'{PREMIUM_TIER_PRICE / PREMIUM_TIER_AMOUNT} ETH per USDC',
+                'break_even': f'Worth it if you need >{FREE_TIER_AMOUNT} USDC per day'
+            }
+        })
+    except Exception as e:
+        logger.error(f"Pricing error: {e}")
+        return jsonify({'error': str(e)}), 500
+
 
 @app.route('/stats')
 def stats():
