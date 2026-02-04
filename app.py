@@ -77,6 +77,89 @@ def index():
         <div class="stat">Total USDC Distributed: <span class="highlight">{stats['total_usdc']} USDC</span></div>
         <div class="stat">Success Rate: <span class="highlight">{stats['success_rate']}%</span></div>
 
+        <h2>💧 Request Test USDC (Interactive)</h2>
+        <div style="background: #1a1a1a; padding: 20px; border-left: 3px solid #00ff00; margin: 20px 0;">
+            <form id="faucetForm" style="display: grid; gap: 15px;">
+                <div>
+                    <label style="display: block; margin-bottom: 5px;">Agent Name *</label>
+                    <input type="text" id="agent_name" placeholder="MyAwesomeAgent" required
+                           style="width: 100%; padding: 8px; background: #0a0a0a; color: #00ff00; border: 1px solid #00ff00; font-family: monospace;">
+                </div>
+
+                <div>
+                    <label style="display: block; margin-bottom: 5px;">Wallet Address (Sepolia) *</label>
+                    <input type="text" id="wallet_address" placeholder="0x..." required
+                           style="width: 100%; padding: 8px; background: #0a0a0a; color: #00ff00; border: 1px solid #00ff00; font-family: monospace;">
+                </div>
+
+                <div>
+                    <label style="display: block; margin-bottom: 5px;">Reason *</label>
+                    <input type="text" id="reason" placeholder="Testing USDC hackathon project" required
+                           style="width: 100%; padding: 8px; background: #0a0a0a; color: #00ff00; border: 1px solid #00ff00; font-family: monospace;">
+                </div>
+
+                <div>
+                    <label style="display: block; margin-bottom: 5px;">Moltbook Proof (Optional)</label>
+                    <input type="text" id="moltbook_proof" placeholder="https://moltbook.com/post/..."
+                           style="width: 100%; padding: 8px; background: #0a0a0a; color: #00ff00; border: 1px solid #00ff00; font-family: monospace;">
+                </div>
+
+                <button type="submit" style="padding: 12px; background: #00ff00; color: #0a0a0a; border: none; font-weight: bold; cursor: pointer; font-family: monospace; font-size: 16px;">
+                    🚰 Request 10 USDC
+                </button>
+            </form>
+
+            <div id="result" style="margin-top: 20px; padding: 15px; display: none; border-left: 3px solid #ffff00;"></div>
+        </div>
+
+        <script>
+            document.getElementById('faucetForm').addEventListener('submit', async (e) => {{
+                e.preventDefault();
+
+                const resultDiv = document.getElementById('result');
+                resultDiv.style.display = 'block';
+                resultDiv.style.borderColor = '#ffff00';
+                resultDiv.style.color = '#ffff00';
+                resultDiv.innerHTML = '⏳ Processing request...';
+
+                const data = {{
+                    agent_name: document.getElementById('agent_name').value,
+                    wallet_address: document.getElementById('wallet_address').value,
+                    reason: document.getElementById('reason').value,
+                    moltbook_proof: document.getElementById('moltbook_proof').value
+                }};
+
+                try {{
+                    const response = await fetch('/request', {{
+                        method: 'POST',
+                        headers: {{ 'Content-Type': 'application/json' }},
+                        body: JSON.stringify(data)
+                    }});
+
+                    const result = await response.json();
+
+                    if (result.success) {{
+                        resultDiv.style.borderColor = '#00ff00';
+                        resultDiv.style.color = '#00ff00';
+                        resultDiv.innerHTML = `
+                            ✅ Success! 10 USDC sent to your wallet!<br><br>
+                            <strong>Transaction:</strong> <a href="https://sepolia.etherscan.io/tx/${{result.tx_hash}}" target="_blank" style="color: #00aaff;">${{result.tx_hash.slice(0, 20)}}...</a><br>
+                            <strong>Agent:</strong> ${{result.agent_name}}<br>
+                            <strong>Cooldown:</strong> ${{result.cooldown_hours}} hours
+                        `;
+                    }} else {{
+                        resultDiv.style.borderColor = '#ff0000';
+                        resultDiv.style.color = '#ff0000';
+                        resultDiv.innerHTML = `❌ Error: ${{result.error}}`;
+                    }}
+                }} catch (error) {{
+                    resultDiv.style.borderColor = '#ff0000';
+                    resultDiv.style.color = '#ff0000';
+                    resultDiv.innerHTML = `❌ Network error: ${{error.message}}`;
+                }}
+            }});
+        </script>
+
         <h2>🤖 How to Use (API)</h2>
         <div class="code">
 curl -X POST {request.url_root}request \\
