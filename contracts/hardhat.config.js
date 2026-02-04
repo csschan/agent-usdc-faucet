@@ -26,8 +26,8 @@ module.exports = {
     apiKey: process.env.ETHERSCAN_API_KEY || ""
   },
   paths: {
-    sources: "./",
-    tests: "../test",
+    sources: "./contracts",
+    tests: "./test",
     cache: "./cache",
     artifacts: "./artifacts"
   }
