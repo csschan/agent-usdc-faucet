@@ -36,13 +36,37 @@ AI agents participating in the USDC hackathon need testnet USDC to test their pr
 
 ## 💡 Solution
 
-**Agent-First USDC Faucet** - Optimized for AI agents:
+**Agent-First USDC Faucet** - Optimized for AI agents with **mixed pricing model**:
 
-✅ **Natural language requests** (not forms)
-✅ **Moltbook identity verification** (not captchas)
-✅ **API-first design** (agents don't need browsers)
-✅ **Instant delivery** (<30 seconds)
-✅ **Usage analytics** (research on agent behavior)
+### Two Service Tiers
+
+**🆓 Free Tier**
+- Amount: 10 USDC
+- Cooldown: 24 hours
+- Cost: Free
+- Use case: Basic testing, casual development
+
+**⚡ Premium Tier**
+- Amount: 100 USDC (10x more!)
+- Cooldown: None (unlimited)
+- Cost: 0.001 ETH (~$2.50)
+- Use case: CI/CD, production agents, high-frequency testing
+
+### 🤖 True Autonomous Payments
+
+**Balance/Deposit System** - Enables agents to operate FULLY autonomously:
+
+```
+Agent deposits once → Uses balance for multiple requests → No per-request transactions
+```
+
+**How it works:**
+1. Agent deposits ETH once (e.g., 0.01 ETH = 10 premium requests)
+2. Agent makes premium requests autonomously using balance
+3. No need for web3 transaction on each request
+4. **Zero human intervention after initial deposit**
+
+This is **TRUE Agentic Commerce**: Agents making economic decisions AND executing payments autonomously.
 
 ---
 
@@ -50,35 +74,68 @@ AI agents participating in the USDC hackathon need testnet USDC to test their pr
 
 ### For AI Agents
 
-Request testnet USDC with a simple API call:
+#### Option 1: Free Tier (Simple)
 
 ```bash
-curl -X POST https://agent-faucet.xyz/request \
+curl -X POST https://web-production-19f04.up.railway.app/request \
   -H "Content-Type: application/json" \
   -d '{
     "agent_name": "YourAgentName",
     "wallet_address": "0xYourSepoliaAddress",
-    "reason": "Testing my USDC hackathon project",
-    "moltbook_proof": "https://moltbook.com/post/your-post-id"
+    "reason": "Testing my USDC hackathon project"
   }'
 ```
 
-**Response:**
-```json
-{
-  "success": true,
-  "amount": "10 USDC",
-  "tx_hash": "0x...",
-  "explorer": "https://sepolia.etherscan.io/tx/0x...",
-  "message": "Sent 10 testnet USDC. Good luck! 🦞"
-}
+Response: 10 USDC, 24h cooldown
+
+#### Option 2: Premium Tier (Pay-per-use)
+
+```bash
+# Step 1: Send 0.001 ETH payment
+# Step 2: Request with payment proof
+curl -X POST https://web-production-19f04.up.railway.app/request-premium \
+  -H "Content-Type: application/json" \
+  -d '{
+    "agent_name": "YourAgentName",
+    "wallet_address": "0xYourSepoliaAddress",
+    "payment_tx": "0xPAID...",
+    "reason": "High-frequency testing"
+  }'
 ```
 
-### Requirements
+Response: 100 USDC, no cooldown
 
-- Must be a registered agent on [Moltbook](https://moltbook.com)
-- Valid Ethereum address (Sepolia testnet)
-- 24-hour cooldown between requests
+#### Option 3: Balance System (TRUE AUTONOMOUS) ⚡
+
+```bash
+# Step 1: Deposit once
+curl -X POST https://web-production-19f04.up.railway.app/deposit \
+  -H "Content-Type: application/json" \
+  -d '{
+    "agent_name": "YourAgentName",
+    "amount_eth": 0.01,
+    "deposit_tx": "0xDEPOSIT..."
+  }'
+
+# Step 2: Check balance
+curl "https://web-production-19f04.up.railway.app/balance?agent_name=YourAgentName"
+
+# Step 3: Use balance for multiple autonomous requests
+curl -X POST https://web-production-19f04.up.railway.app/request-premium-balance \
+  -H "Content-Type: application/json" \
+  -d '{
+    "agent_name": "YourAgentName",
+    "wallet_address": "0xYourSepoliaAddress",
+    "reason": "Autonomous premium request"
+  }'
+```
+
+**Benefits of Balance System:**
+- ✅ Deposit once, use 10+ times
+- ✅ No per-request web3 transactions
+- ✅ TRUE autonomous operation
+- ✅ Faster (no tx signing delay)
+- ✅ Cheaper (fewer gas fees)
 
 ---
 
@@ -120,9 +177,13 @@ curl -X POST https://agent-faucet.xyz/request \
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/` | GET | Landing page with instructions |
-| `/request` | POST | Request USDC (main endpoint) |
+| `/request` | POST | Free tier: 10 USDC, 24h cooldown |
+| `/request-premium` | POST | Premium tier: 100 USDC, requires payment |
+| `/deposit` | POST | Deposit ETH for autonomous usage |
+| `/balance` | GET | Check agent's balance |
+| `/request-premium-balance` | POST | Premium tier using balance (autonomous) |
+| `/pricing` | GET | Get pricing information (JSON) |
 | `/stats` | GET | Detailed statistics dashboard |
-| `/recent` | GET | Recent requests list |
 | `/health` | GET | Health check + faucet balance |
 
 ### Analytics Dashboard
@@ -197,16 +258,35 @@ Visit: `http://localhost:5000`
 ### Why This Fits the Hackathon Track
 
 **"Faster"**:
-- Agents get USDC instantly vs manual human verification
-- Enables rapid testing iteration
+- Agents decide tier 60-600x faster than humans
+- Balance system: No per-request transaction delay
+- Autonomous operation 24/7 (humans need sleep)
 
 **"Safer"**:
-- Moltbook identity verification prevents abuse
+- Programmatic decision-making (no human error)
+- Balance system prevents overpayment
 - On-chain transparency (all txs public)
 
 **"Cheaper"**:
+- Agents optimize costs autonomously (free vs premium)
+- Balance system reduces gas fees (deposit once, use many times)
 - No human overhead costs
-- Automated = scalable to 1000s of agents
+
+### Key Innovation: Autonomous Economic Decision-Making
+
+This project demonstrates **3 levels of Agentic Commerce**:
+
+1. **Level 1: Autonomous Decision** - Agent evaluates pricing and chooses optimal tier
+2. **Level 2: Autonomous Payment** - Agent executes web3 payment without human approval
+3. **Level 3: Autonomous Optimization** - Agent uses balance system to minimize transaction costs
+
+**Example autonomous workflow:**
+```python
+agent.decide_tier(500)  # Agent: "Premium is 60x faster, worth the cost"
+agent.deposit_balance(0.01)  # Deposit once
+agent.request_usdc()  # Use 10 times autonomously
+# Total: ZERO human intervention
+```
 
 ### Research Insights
 

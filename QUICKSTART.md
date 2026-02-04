@@ -152,6 +152,106 @@ requests.post('/request-premium', json={
 
 ---
 
+### 场景4: Balance系统 (TRUE AUTONOMOUS 全自动) ⚡
+
+**这是真正的Agent Commerce**: 存一次，自动用多次，无需每次签名交易
+
+#### Step 1: 存款
+```bash
+curl -X POST https://web-production-19f04.up.railway.app/deposit \
+  -H "Content-Type: application/json" \
+  -d '{
+    "agent_name": "AutonomousAgent",
+    "amount_eth": 0.01,
+    "deposit_tx": "0xDEPOSIT_'$(date +%s)'"
+  }'
+```
+
+**Expected结果**:
+```json
+{
+  "success": true,
+  "deposit_amount": 0.01,
+  "new_balance": 0.01,
+  "message": "Deposit successful! 0.01 ETH added to balance.",
+  "usage": "You can now use /request-premium-balance for autonomous requests"
+}
+```
+
+#### Step 2: 查询余额
+```bash
+curl "https://web-production-19f04.up.railway.app/balance?agent_name=AutonomousAgent"
+```
+
+**Expected结果**:
+```json
+{
+  "success": true,
+  "agent_name": "AutonomousAgent",
+  "balance_eth": 0.01,
+  "has_balance": true
+}
+```
+
+#### Step 3: 自动使用余额请求premium服务（可重复多次）
+```bash
+curl -X POST https://web-production-19f04.up.railway.app/request-premium-balance \
+  -H "Content-Type: application/json" \
+  -d '{
+    "agent_name": "AutonomousAgent",
+    "wallet_address": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
+    "reason": "Autonomous CI/CD testing"
+  }'
+```
+
+**Expected结果**:
+```json
+{
+  "success": true,
+  "tier": "premium_balance",
+  "amount": "100 USDC",
+  "balance_deducted": 0.001,
+  "remaining_balance": 0.009,
+  "note": "TRUE AUTONOMOUS: No per-request web3 transaction needed!",
+  "benefits": "Deposited once, used autonomously - this is true Agentic Commerce"
+}
+```
+
+#### 再次使用（无需签名交易）
+```bash
+# 立即再请求一次 - 不需要新的web3交易！
+curl -X POST https://web-production-19f04.up.railway.app/request-premium-balance \
+  -H "Content-Type: application/json" \
+  -d '{
+    "agent_name": "AutonomousAgent",
+    "wallet_address": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
+    "reason": "Second autonomous request"
+  }'
+```
+
+**为什么这是TRUE Agentic Commerce**:
+- ✅ **存一次，用10次**: 0.01 ETH = 10次premium请求
+- ✅ **零per-request交易**: 不需要每次都签名和广播交易
+- ✅ **完全自主**: Agent可以自己决定何时使用余额
+- ✅ **更快**: 省去每次web3交易的延迟（~15秒 → <1秒）
+- ✅ **更便宜**: 省去9次gas费用
+
+**与人类对比**:
+- 人类: 每次都要打开钱包 → 确认交易 → 等待 → 复制hash → 粘贴 → 提交 (每次~2分钟)
+- Agent: 存一次后，每次请求 <100ms，完全自动化
+
+**真实使用场景**:
+```python
+# Production CI/CD Agent
+agent.deposit(0.1)  # 存一次，可用100次
+for test in tests:
+    usdc = agent.request_premium()  # 每次自动扣除余额，无需人工
+    test.run(usdc)
+# 完全自主，无人工介入
+```
+
+---
+
 ## 🤖 完整Agent工作流（真实场景）
 
 **场景**: Production CI/CD agent需要运行100次测试，每次需要10 USDC
